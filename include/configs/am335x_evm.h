@@ -16,7 +16,9 @@
 #define CONFIG_AM335X
 #define CONFIG_TI81XX
 #define CONFIG_SYS_NO_FLASH
+#ifndef CONFIG_SPI_BOOT
 #define CONFIG_NAND_ENV
+#endif
 
 #include <asm/arch/cpu.h>		/* get chip and board defs */
 #include <asm/arch/hardware.h>
@@ -36,9 +38,6 @@
 #define CONFIG_CMDLINE_TAG		/* enable passing of ATAGs */
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_INITRD_TAG		/* Required for ramdisk support */
-
-/* set to negative value for no autoboot */
-#define CONFIG_BOOTDELAY		3
 
 #define CONFIG_MMC
 #define CONFIG_NAND
@@ -63,7 +62,7 @@
 	"spi_src_addr=0x62000\0" \
 	"nor_src_addr=0x08080000\0" \
 	"nand_img_siz=0x500000\0" \
-	"spi_img_siz=0x280000\0" \
+	"spi_img_siz=0x380000\0" \
 	"nor_img_siz=0x280000\0" \
 	"spi_bus_no=0\0" \
 	"rootpath=/export/rootfs\0" \
@@ -125,6 +124,10 @@
 		"run net_args; " \
 		"bootm ${kloadaddr}\0" \
 
+#ifndef CONFIG_RESTORE_FLASH
+/* set to negative value for no autoboot */
+#define CONFIG_BOOTDELAY		3
+
 #define CONFIG_BOOTCOMMAND \
 	"if mmc rescan; then " \
 		"echo SD/MMC found on device ${mmc_dev};" \
@@ -142,6 +145,17 @@
 		"fi;" \
 	"fi;" \
 	"run nand_boot;" \
+
+#else
+#define CONFIG_BOOTDELAY		0
+
+#define CONFIG_BOOTCOMMAND			\
+	"setenv autoload no; "			\
+	"dhcp; "				\
+	"if tftp 80000000 debrick.scr; then "	\
+		"source 80000000; "		\
+	"fi"
+#endif
 
 #define CONFIG_MISC_INIT_R
 #define CONFIG_SYS_AUTOLOAD		"yes"
@@ -183,18 +197,20 @@
 #define CONFIG_SPL
 #define CONFIG_SPL_BOARD_INIT
 #define CONFIG_SPL_TEXT_BASE		0x402F0400
-#define CONFIG_SPL_MAX_SIZE		(46 * 1024)
+#define CONFIG_SPL_MAX_SIZE		(101 * 1024)
 #define CONFIG_SPL_STACK		LOW_LEVEL_SRAM_STACK
 
 #define CONFIG_SPL_BSS_START_ADDR	0x80000000
 #define CONFIG_SPL_BSS_MAX_SIZE		0x80000		/* 512 KB */
 
+#ifndef CONFIG_SPI_BOOT
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300 /* address 0x60000 */
 #define CONFIG_SYS_U_BOOT_MAX_SIZE_SECTORS	0x200 /* 256 KB */
 #define CONFIG_SYS_MMC_SD_FAT_BOOT_PARTITION	1
 #define CONFIG_SPL_FAT_LOAD_PAYLOAD_NAME	"u-boot.img"
 #define CONFIG_SPL_MMC_SUPPORT
 #define CONFIG_SPL_FAT_SUPPORT
+#endif
 
 #define CONFIG_SPL_LIBCOMMON_SUPPORT
 #define CONFIG_SPL_LIBDISK_SUPPORT
@@ -203,9 +219,13 @@
 #define CONFIG_SPL_SERIAL_SUPPORT
 #define CONFIG_SPL_YMODEM_SUPPORT
 #define CONFIG_SPL_POWER_SUPPORT
+#define CONFIG_SPL_NET_SUPPORT
+#define CONFIG_SPL_NET_VCI_STRING	"AM335x U-Boot SPL"
+#define CONFIG_SPL_ETH_SUPPORT
 #define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/omap-common/u-boot-spl.lds"
 
 /* NAND boot config */
+#ifndef CONFIG_SPI_BOOT
 #define CONFIG_SPL_NAND_SIMPLE
 #define CONFIG_SPL_NAND_SUPPORT
 #define CONFIG_SYS_NAND_5_ADDR_CYCLE
@@ -233,14 +253,26 @@
 #define	CONFIG_SYS_NAND_U_BOOT_START	CONFIG_SYS_TEXT_BASE
 
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
+#endif
+
+/* SPI boot config */
+#define CONFIG_SPL_SPI_SUPPORT
+#define CONFIG_SPL_SPI_FLASH_SUPPORT
+#define CONFIG_SPL_SPI_LOAD
+#define CONFIG_SPL_SPI_BUS		0
+#define CONFIG_SPL_SPI_CS		0
+#define CONFIG_SYS_SPI_U_BOOT_OFFS	0x20000
+#define CONFIG_SYS_SPI_U_BOOT_SIZE	0x40000
 
 /*
- * 8MB into the SDRAM to allow for SPL's bss at the beginning of SDRAM.
+ * 1MB into the SDRAM to allow for SPL's bss at the beginning of SDRAM.
  * 64 bytes before this address should be set aside for u-boot.img's
- * header. That is 0x807FFFC0--0x80800000 should not be used for any
+ * header. That is 0x800FFFC0--0x80100000 should not be used for any
  * other needs.
  */
-#define CONFIG_SYS_TEXT_BASE		0x80800000
+#define CONFIG_SYS_TEXT_BASE		0x80100000
+#define CONFIG_SYS_SPL_MALLOC_START	0x80208000
+#define CONFIG_SYS_SPL_MALLOC_SIZE	0x100000
 
 /* Since SPL did all of this for us, we don't need to do it twice. */
 #ifndef CONFIG_SPL_BUILD
@@ -369,17 +401,12 @@
 #endif
 
 /* ENV in SPI */
-#if defined(CONFIG_SPI_ENV)
+#if defined(CONFIG_SPI_BOOT)
 # undef CONFIG_ENV_IS_NOWHERE
 # define CONFIG_ENV_IS_IN_SPI_FLASH
-# define CONFIG_SYS_FLASH_BASE		(0)
-# define SPI_FLASH_ERASE_SIZE		(4 * 1024) /* sector size */
-# define CONFIG_SYS_ENV_SECT_SIZE	(2 * SPI_FLASH_ERASE_SIZE)
-# define CONFIG_ENV_SECT_SIZE		(CONFIG_SYS_ENV_SECT_SIZE)
-# define CONFIG_ENV_OFFSET		(96 * SPI_FLASH_ERASE_SIZE)
-# define CONFIG_ENV_ADDR		(CONFIG_ENV_OFFSET)
-# define CONFIG_SYS_MAX_FLASH_SECT	(1024) /* # of sectors in SPI flash */
-# define CONFIG_SYS_MAX_FLASH_BANKS	(1)
+# define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
+# define CONFIG_ENV_OFFSET		(384 << 10) /* 384 KB in */
+# define CONFIG_ENV_SECT_SIZE		(4 << 10) /* 4 KB sectors */
 #endif /* SPI support */
 
 /* I2C */

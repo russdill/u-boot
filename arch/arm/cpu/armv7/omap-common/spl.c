@@ -34,7 +34,9 @@
 #include <asm/omap_common.h>
 #include <asm/arch/mmc_host_def.h>
 #include <i2c.h>
+#include <spi_flash.h>
 #include <image.h>
+#include <malloc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -106,6 +108,9 @@ void board_init_r(gd_t *id, ulong dummy)
 	u32 boot_device;
 	debug(">>spl:board_init_r()\n");
 
+	mem_malloc_init(CONFIG_SYS_SPL_MALLOC_START,
+			CONFIG_SYS_SPL_MALLOC_SIZE);
+
 	timer_init();
 	i2c_init(CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
 
@@ -130,6 +135,16 @@ void board_init_r(gd_t *id, ulong dummy)
 #ifdef CONFIG_SPL_YMODEM_SUPPORT
 	case BOOT_DEVICE_UART:
 		spl_ymodem_load_image();
+		break;
+#endif
+#ifdef CONFIG_SPL_SPI_SUPPORT
+	case BOOT_DEVICE_SPI:
+		spi_boot();
+	break;
+#endif
+#ifdef CONFIG_SPL_ETH_SUPPORT
+	case BOOT_DEVICE_CPGMAC:
+		spl_eth_load_image();
 		break;
 #endif
 	default:

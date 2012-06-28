@@ -53,6 +53,14 @@ endif
 
 ifdef CONFIG_SPL_BUILD
 COBJS-$(CONFIG_SPL_YMODEM_SUPPORT) += crc16.o
+COBJS-$(CONFIG_SPL_NET_SUPPORT) += crc32.o
+ifneq ($(CONFIG_SPL_SPI_FLASH_SUPPORT)$(CONFIG_SPL_NET_SUPPORT),)
+COBJS-y += display_options.o
+endif
+COBJS-$(CONFIG_SPL_NET_SUPPORT) += errno.o
+COBJS-$(CONFIG_SPL_NET_SUPPORT) += hashtable.o
+COBJS-$(CONFIG_SPL_NET_SUPPORT) += net_utils.o
+COBJS-$(CONFIG_SPL_NET_SUPPORT) += qsort.o
 endif
 COBJS-y += ctype.o
 COBJS-y += div64.o

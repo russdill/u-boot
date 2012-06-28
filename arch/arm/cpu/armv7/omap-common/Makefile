@@ -29,7 +29,7 @@ SOBJS	:= reset.o
 
 COBJS	:= timer.o
 COBJS	+= utils.o
-ifdef CONFIG_OMAP
+ifneq ($(CONFIG_AM335X)$(CONFIG_OMAP),)
 COBJS	+= gpio.o
 endif
 
@@ -43,6 +43,9 @@ COBJS	+= spl_mmc.o
 endif
 ifdef CONFIG_SPL_YMODEM_SUPPORT
 COBJS	+= spl_ymodem.o
+endif
+ifdef CONFIG_SPL_ETH_SUPPORT
+COBJS	+= spl_eth.o
 endif
 endif
 

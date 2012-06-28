@@ -701,8 +701,14 @@ static int cpdma_process(struct cpsw_priv *priv, struct cpdma_chan *chan,
 	if (buffer)
 		*buffer = desc_read_ptr(desc, sw_buffer);
 
-	if (status & CPDMA_DESC_OWNER)
+	if (status & CPDMA_DESC_OWNER) {
+		if (chan_read(chan, hdp) == NULL) {
+			if (desc_read(desc, hw_mode) & CPDMA_DESC_OWNER)
+				chan_write(chan, hdp, desc);
+		}
+
 		return -EBUSY;
+	}
 
 	chan->head = desc_read_ptr(desc, hw_next);
 	chan_write(chan, cp, desc);
@@ -824,6 +830,17 @@ static int cpsw_init(struct eth_device *dev, bd_t *bis)
 static void cpsw_halt(struct eth_device *dev)
 {
 	struct cpsw_priv	*priv = dev->priv;
+
+	udelay(1);
+	writel(0, priv->dma_regs + CPDMA_TXCONTROL);
+	writel(0, priv->dma_regs + CPDMA_RXCONTROL);
+
+	/* soft reset the controller and initialize priv */
+	soft_reset(&priv->regs->soft_reset);
+
+	/* clear dma state */
+	soft_reset(priv->dma_regs + CPDMA_SOFTRESET);
+
 	priv->data.control(0);
 }
 

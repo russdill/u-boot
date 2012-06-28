@@ -19,7 +19,7 @@
 #include <asm/arch/hardware.h>
 
 #define MUX_CFG(value, offset)	\
-	__raw_writel(value, (CTRL_BASE + offset));
+	writel(value, (CTRL_BASE + offset));
 
 /* PAD Control Fields */
 #define SLEWCTRL	(0x1 << 6)
@@ -297,7 +297,8 @@ static struct module_pin_mux nand_pin_mux[] = {
 };
 #endif
 
-static struct module_pin_mux i2c0_pin_mux[] = {
+static struct module_pin_mux __attribute__((section (".data"))) i2c0_pin_mux[] =
+{
 	{OFFSET(i2c0_sda), (MODE(0) | RXACTIVE | PULLUDEN | SLEWCTRL)},	/* I2C_DATA */
 	{OFFSET(i2c0_scl), (MODE(0) | RXACTIVE | PULLUDEN | SLEWCTRL)},	/* I2C_SCLK */
 	{-1},
@@ -443,15 +444,26 @@ static struct module_pin_mux mmc0_pin_mux[] = {
 	{-1},
 };
 
+static struct module_pin_mux mmc0_sk_pin_mux[] = {
+	{OFFSET(mmc0_dat3), (MODE(0) | RXACTIVE | PULLUP_EN)},	/* MMC0_DAT3 */
+	{OFFSET(mmc0_dat2), (MODE(0) | RXACTIVE | PULLUP_EN)},	/* MMC0_DAT2 */
+	{OFFSET(mmc0_dat1), (MODE(0) | RXACTIVE | PULLUP_EN)},	/* MMC0_DAT1 */
+	{OFFSET(mmc0_dat0), (MODE(0) | RXACTIVE | PULLUP_EN)},	/* MMC0_DAT0 */
+	{OFFSET(mmc0_clk), (MODE(0) | RXACTIVE | PULLUP_EN)},	/* MMC0_CLK */
+	{OFFSET(mmc0_cmd), (MODE(0) | RXACTIVE | PULLUP_EN)},	/* MMC0_CMD */
+	{OFFSET(spi0_cs1), (MODE(5) | RXACTIVE | PULLUP_EN)},	/* MMC0_CD */
+	{-1},
+};
+
 static struct module_pin_mux mmc1_pin_mux[] = {
-	{OFFSET(gpmc_ad3), (MODE(1) | RXACTIVE)},	/* MMC1_DAT3 */
-	{OFFSET(gpmc_ad2), (MODE(1) | RXACTIVE)},	/* MMC1_DAT2 */
-	{OFFSET(gpmc_ad1), (MODE(1) | RXACTIVE)},	/* MMC1_DAT1 */
-	{OFFSET(gpmc_ad0), (MODE(1) | RXACTIVE)},	/* MMC1_DAT0 */
+	{OFFSET(gpmc_ad3), (MODE(1) | RXACTIVE | PULLUP_EN)},	/* MMC1_DAT3 */
+	{OFFSET(gpmc_ad2), (MODE(1) | RXACTIVE | PULLUP_EN)},	/* MMC1_DAT2 */
+	{OFFSET(gpmc_ad1), (MODE(1) | RXACTIVE | PULLUP_EN)},	/* MMC1_DAT1 */
+	{OFFSET(gpmc_ad0), (MODE(1) | RXACTIVE | PULLUP_EN)},	/* MMC1_DAT0 */
 	{OFFSET(gpmc_csn1), (MODE(2) | RXACTIVE | PULLUP_EN)},	/* MMC1_CLK */
 	{OFFSET(gpmc_csn2), (MODE(2) | RXACTIVE | PULLUP_EN)},	/* MMC1_CMD */
-	{OFFSET(uart1_rxd), (MODE(1) | RXACTIVE | PULLUP_EN)},	/* MMC1_WP */
-	{OFFSET(mcasp0_fsx), (MODE(4) | RXACTIVE)},	/* MMC1_CD */
+	{OFFSET(gpmc_csn0), (MODE(7) | RXACTIVE | PULLUP_EN)},	/* MMC1_WP */
+	{OFFSET(gpmc_advn_ale), (MODE(7) | RXACTIVE | PULLUP_EN)},	/* MMC1_CD */
 	{-1},
 };
 #endif
@@ -477,6 +489,11 @@ static struct module_pin_mux spi1_pin_mux[] = {
 	{-1},
 };
 #endif
+
+static struct module_pin_mux gpio0_7_pin_mux[] = {
+	{OFFSET(ecap0_in_pwm0_out), (MODE(7) | PULLUDEN)},	/* GPIO0_7 */
+	{-1},
+};
 
 /*
  * Update the structure with the modules present in the general purpose
@@ -565,6 +582,19 @@ static struct evm_pin_mux low_cost_evm_pin_mux[] = {
 	{0},
 };
 
+static struct evm_pin_mux sk_evm_pin_mux[] = {
+	{uart0_pin_mux, PROFILE_ALL, DEV_ON_BASEBOARD},
+#ifdef CONFIG_MMC
+	{mmc0_sk_pin_mux, PROFILE_ALL, DEV_ON_BASEBOARD},
+#endif
+
+#ifndef CONFIG_NO_ETH
+       {rgmii1_pin_mux, PROFILE_ALL, DEV_ON_BASEBOARD},
+       {rgmii2_pin_mux, PROFILE_ALL, DEV_ON_BASEBOARD},
+#endif
+	{0},
+};
+
 static struct evm_pin_mux beaglebone_pin_mux[] = {
 	{uart0_pin_mux, PROFILE_ALL, DEV_ON_BASEBOARD},
 	{i2c1_pin_mux, PROFILE_ALL & ~PROFILE_2 & ~PROFILE_4, DEV_ON_BASEBOARD},
@@ -576,7 +606,7 @@ static struct evm_pin_mux beaglebone_pin_mux[] = {
 #endif
 #ifdef CONFIG_MMC
 	{mmc0_pin_mux, PROFILE_ALL, DEV_ON_BASEBOARD},
-	{mmc1_pin_mux, PROFILE_2, DEV_ON_DGHTR_BRD},
+	{mmc1_pin_mux, PROFILE_ALL, DEV_ON_BASEBOARD},
 #endif
 #ifdef CONFIG_SPI
 	{spi0_pin_mux, PROFILE_2, DEV_ON_DGHTR_BRD},
@@ -609,6 +639,7 @@ static struct evm_pin_mux *am335x_evm_pin_mux[] = {
 	ia_motor_control_evm_pin_mux,
 	ip_phone_evm_pin_mux,
 	low_cost_evm_pin_mux,
+	sk_evm_pin_mux,
 };
 
 /*
@@ -665,7 +696,7 @@ static void set_evm_pin_mux(struct evm_pin_mux *pin_mux,
 void configure_evm_pin_mux(unsigned char dghtr_brd_id, char version[4], unsigned short
 		profile, unsigned int daughter_board_flag)
 {
-	if (dghtr_brd_id > BASE_BOARD)
+	if (dghtr_brd_id > SK_BOARD)
 		return;
 
 	/* Setup correct evm pinmux for older bone boards (Rev < A2) */
@@ -685,4 +716,9 @@ void enable_i2c0_pin_mux(void)
 void enable_uart0_pin_mux(void)
 {
 	configure_module_pin_mux(uart0_pin_mux);
+}
+
+void enable_gpio0_7_pin_mux(void)
+{
+	configure_module_pin_mux(gpio0_7_pin_mux);
 }
