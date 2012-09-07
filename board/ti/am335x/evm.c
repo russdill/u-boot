@@ -650,11 +650,49 @@ void spl_board_init(void)
 #endif
 
 #define GPIO_DDR_VTT_EN		7
+
+#ifdef CONFIG_SPL_BUILD
+
+#define RTC_SCRATCH0	0x44E3E060
+#define RTC_SCRATCH1	0x44E3E064
+
+void rtc_only(void)
+{
+	u32 scratch1 = readl(RTC_SCRATCH1);
+	void (*resume_func)(void);
+
+	if (scratch1 == 0)
+		return;
+
+	writel(0, RTC_SCRATCH1);
+
+	if (scratch1 == 2) {
+		writel(0x2, CM_WKUP_GPIO0_CLKCTRL);
+		while (readl(CM_WKUP_GPIO0_CLKCTRL) != 0x2);
+		enable_gpio0_7_pin_mux();
+		gpio_request(GPIO_DDR_VTT_EN, "ddr_vtt_en");
+		gpio_direction_output(GPIO_DDR_VTT_EN, 1);
+		ddr_pll_config(303);
+		config_am335x_ddr3();
+	} else {
+		ddr_pll_config(266);
+		config_am335x_ddr2();
+	}
+
+	resume_func = (void *) readl(RTC_SCRATCH0);
+	resume_func();
+}
+#endif
+
 /*
  * early system init of muxing and clocks.
  */
 void s_init(void)
 {
+#ifdef CONFIG_SPL_BUILD
+	rtc_only();
+#endif
+
 	/* Can be removed as A8 comes up with L2 enabled */
 	l2_cache_enable();
 
