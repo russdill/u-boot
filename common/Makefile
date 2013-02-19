@@ -152,6 +152,7 @@ COBJS-$(CONFIG_CMD_SOFTSWITCH) += cmd_softswitch.o
 COBJS-$(CONFIG_CMD_SPI) += cmd_spi.o
 COBJS-$(CONFIG_CMD_SPIBOOTLDR) += cmd_spibootldr.o
 COBJS-$(CONFIG_CMD_STRINGS) += cmd_strings.o
+COBJS-$(CONFIG_CMD_SWSUSP) += cmd_swsusp.o
 COBJS-$(CONFIG_CMD_TERMINAL) += cmd_terminal.o
 COBJS-$(CONFIG_CMD_TIME) += cmd_time.o
 COBJS-$(CONFIG_CMD_TRACE) += cmd_trace.o

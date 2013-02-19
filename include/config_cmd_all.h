@@ -88,6 +88,7 @@
 #define CONFIG_CMD_SNTP		/* SNTP support			*/
 #define CONFIG_CMD_SOURCE	/* "source" command support	*/
 #define CONFIG_CMD_SPI		/* SPI utility			*/
+#define CONFIG_CMD_SWSUSP	/* Hibernation restore		*/
 #define CONFIG_CMD_TERMINAL	/* built-in Serial Terminal	*/
 #define CONFIG_CMD_UBI		/* UBI Support			*/
 #define CONFIG_CMD_UBIFS	/* UBIFS Support		*/
