@@ -41,6 +41,7 @@ SOBJS-y += crt0.o
 ifndef CONFIG_SPL_BUILD
 COBJS-y	+= board.o
 COBJS-y	+= bootm.o
+COBJS-y += call_with_stack.o
 COBJS-$(CONFIG_SYS_L2_PL310) += cache-pl310.o
 SOBJS-$(CONFIG_USE_ARCH_MEMSET) += memset.o
 SOBJS-$(CONFIG_USE_ARCH_MEMCPY) += memcpy.o
