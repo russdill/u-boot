@@ -44,6 +44,8 @@ COBJS-y	+= reset.o
 COBJS-y	+= cache.o
 COBJS-y	+= cache-cp15.o
 
+COBJS-y += call_with_stack.o
+
 SRCS	:= $(GLSOBJS:.o=.S) $(GLCOBJS:.o=.c) \
 	   $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
 OBJS	:= $(addprefix $(obj),$(SOBJS-y) $(COBJS-y))
