@@ -51,6 +51,7 @@
 #else
 #define NANDARGS ""
 #endif
+#define CONFIG_CMD_BOOTZ
 
 #define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 
@@ -251,6 +252,9 @@
 #ifdef CONFIG_NOR_BOOT
 #define CONFIG_SYS_TEXT_BASE		0x08000000
 #endif
+
+#define CONFIG_CMD_SWSUSP
+#define CONFIG_LZO
 
 /*
  * USB configuration.  We enable MUSB support, both for host and for
